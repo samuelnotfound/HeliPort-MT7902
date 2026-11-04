@@ -13,7 +13,7 @@ enum InterfaceDetails {
 
     static func snapshot(bsd: String, entity: CFString) -> [String: Any]? {
         guard !bsd.isEmpty else { return nil }
-        guard let key = SCDynamicStoreKeyCreateNetworkInterfaceEntity(nil, kSCDynamicStoreDomainState, bsd as CFString, entity) else { return nil }
+        let key = SCDynamicStoreKeyCreateNetworkInterfaceEntity(nil, kSCDynamicStoreDomainState, bsd as CFString, entity)
         return SCDynamicStoreCopyValue(nil, key) as? [String: Any]
     }
 
