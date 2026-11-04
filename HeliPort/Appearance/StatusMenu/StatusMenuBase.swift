@@ -430,8 +430,6 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
         infoOut.rssi = "\(infoIn.rssi) dBm"
         infoOut.noise = "\(infoIn.noise) dBm"
         infoOut.txRate = "\(infoIn.rate) Mbps"
-        infoOut.phyMode = infoIn.op_mode.description
-        infoOut.mcsIndex = "\(infoIn.cur_mcs)"
         infoOut.nss = .unknown
         // The existing MT7902 registry ABI does not expose these measurements.
         infoOut.bssid = .unknown

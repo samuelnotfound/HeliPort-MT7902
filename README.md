@@ -61,3 +61,10 @@ This runs ABI/state/security/scan decoder fixtures with ASan/UBSan, builds the
 original Xcode UI project with the app-only MT7902 C adapter, signs it ad hoc and
 packages it with its license/notice. Dependencies are pinned in Package.resolved.
 Output: `build/dist/HeliPort-MT7902.zip`. No kext is built, installed or loaded.
+
+## App updates
+
+Version **2.0.3** serializes the connection animation on the main run loop and
+uses SystemConfiguration for interface details instead of unchecked route-buffer
+parsing. The app's regression suite tests rapid start/stop transitions and missing
+interface data. Replace only the app in `/Applications`; keep your installed kext.

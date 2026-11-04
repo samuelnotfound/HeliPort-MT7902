@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A79020010000000000000002 /* ConnectionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A79020010000000000000001 /* ConnectionAnimation.swift */; };
+		A79020010000000000000004 /* InterfaceDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = A79020010000000000000003 /* InterfaceDetails.swift */; };
 		1317990B256986E5006957D8 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1317990A256986E5006957D8 /* String+Extensions.swift */; };
 		1380C36124D54BFD00A448CF /* PrefsSavedNetworksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1380C36024D54BFD00A448CF /* PrefsSavedNetworksView.swift */; };
 		1380C36524D5580200A448CF /* PrefsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1380C36424D5580200A448CF /* PrefsWindow.swift */; };
@@ -72,6 +74,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A79020010000000000000001 /* ConnectionAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionAnimation.swift; sourceTree = "<group>"; };
+		A79020010000000000000003 /* InterfaceDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterfaceDetails.swift; sourceTree = "<group>"; };
 		1317990A256986E5006957D8 /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
 		1380C36024D54BFD00A448CF /* PrefsSavedNetworksView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsSavedNetworksView.swift; sourceTree = "<group>"; };
 		1380C36424D5580200A448CF /* PrefsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrefsWindow.swift; sourceTree = "<group>"; };
@@ -261,6 +265,8 @@
 		F34B2B8B24AA4C08009AB1BB /* Supporting files */ = {
 			isa = PBXGroup;
 			children = (
+				A79020010000000000000001 /* ConnectionAnimation.swift */,
+				A79020010000000000000003 /* InterfaceDetails.swift */,
 				F33A1F3A24C83016008ED2BD /* Alert.swift */,
 				138D3CC924CE663B00793AC1 /* BugReporter.swift */,
 				138D3CC724CE635800793AC1 /* Commands.swift */,
@@ -450,6 +456,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A79020010000000000000002 /* ConnectionAnimation.swift in Sources */,
+				A79020010000000000000004 /* InterfaceDetails.swift in Sources */,
 				75FDF38C2481D25A00B2A601 /* Api.c in Sources */,
 				F379276F24A0A4A50087FF2B /* CredentialsManager.swift in Sources */,
 				F336D63C24B497B6004C98C4 /* NetworkManager+Data.swift in Sources */,
@@ -681,7 +689,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
 				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -703,7 +711,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.2;
+				MARKETING_VERSION = 2.0.3;
 				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
 				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;

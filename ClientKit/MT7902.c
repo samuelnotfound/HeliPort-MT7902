@@ -92,7 +92,7 @@ kern_return_t get_station_info(station_info_t *out) {
     out->channel = (uint32_t)number_property(s, CFSTR("wifi-channel"));
     out->rssi = (int16_t)number_property(s, CFSTR("wifi-rssi"));
     out->rate = (uint32_t)number_property(s, CFSTR("wifi-rate"));
-    out->band_width = 20; out->op_mode = (enum itl_phy_mode)255;
+    out->band_width = 20; out->op_mode = ITL80211_MODE_UNKNOWN;
     out->cur_mcs = out->max_mcs = -1;
     IOObjectRelease(s); return KERN_SUCCESS;
 }

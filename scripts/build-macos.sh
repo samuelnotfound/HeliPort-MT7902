@@ -6,6 +6,11 @@ mkdir -p build
 clang -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined tests/mt7902_codec_test.c \
     -framework CoreFoundation -framework IOKit -o build/mt7902_codec_test
 build/mt7902_codec_test
+xcrun swiftc -parse-as-library -sanitize=address -g \
+    'HeliPort/Supporting files/ConnectionAnimation.swift' \
+    'HeliPort/Supporting files/InterfaceDetails.swift' tests/app_lifecycle_test.swift \
+    -o build/app_lifecycle_test
+ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 build/app_lifecycle_test
 xcodebuild -resolvePackageDependencies -project HeliPort.xcodeproj -scheme HeliPort \
     -derivedDataPath build -onlyUsePackageVersionsFromResolvedFile
 xcodebuild -project HeliPort.xcodeproj -scheme HeliPort -configuration Release \
