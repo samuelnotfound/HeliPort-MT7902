@@ -30,7 +30,7 @@ public extension String {
 
     init<T>(cCharArray: T) {
         self = withUnsafeBytes(of: cCharArray) {
-            $0.withMemoryRebound(to: CChar.self) { String(cString: $0.baseAddress!)}
+            String(decoding: $0.prefix(while: { $0 != 0 }), as: UTF8.self)
         }
     }
 }

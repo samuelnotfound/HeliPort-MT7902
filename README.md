@@ -36,10 +36,9 @@ the app refreshes results in scan-only mode and after a failed connection.
 
 ## Behavior and limits
 
-On macOS 26 and newer, the app uses native AppKit menu rows, system symbols,
-section headings and a larger Wi-Fi switch. Older systems retain the original
-HeliPort modern menu. **Use Legacy UI** selects the classic menu on any supported
-system; changing that preference restarts only the app.
+The app uses the original HeliPort modern menu on all supported macOS versions,
+including Tahoe. **Use Legacy UI** selects the classic menu; changing that
+preference restarts only the app.
 
 - Scan results and link/error state come from `itlmt7902` registry properties.
 - Join/disconnect use its existing IOUserClient selectors. Passphrases are never
@@ -56,15 +55,13 @@ system; changing that preference restarts only the app.
 
 ## Build
 
-On macOS 15 or newer with Xcode 26.3 installed (output is Intel x86_64):
+On macOS with Xcode 16.4 installed (output is Intel x86_64):
 
 ```sh
 bash scripts/build-macos.sh
 ```
 
-Actions uses `macos-15-intel` and explicitly selects its installed Xcode 26.3.
-The macOS 26 SDK is needed to build the Tahoe appearance, while the build host
-remains macOS 15. The shared
+Actions uses `macos-15-intel` and explicitly selects Xcode 16.4. The shared
 `HeliPort` scheme builds the app and its login helper; both binaries are checked
 for x86_64 before packaging. The deployment target remains macOS 13.
 
@@ -75,11 +72,24 @@ Output: `build/dist/HeliPort-MT7902.zip`. No kext is built, installed or loaded.
 
 ## App updates
 
-Version **2.1.2** restores automatic Tahoe styling while keeping the macOS 15
-Intel runner. It includes the SystemConfiguration compiler fix and app safety
-changes. Older macOS versions retain the original menu.
+Version **2.1.3** restores the original modern/legacy menu on every supported
+macOS version. Menu polling uses one main-run-loop timer per task, overlapping
+scans share one request, and a password prompt or connection reserves one join
+slot. Repeated clicks focus the existing prompt instead of starting another join.
+Keychain writes stay off the UI thread. Menu actions check that their item still
+exists after tracking ends, and registry string decoding is bounded.
+
+These changes address code hazards found while investigating reported app exits;
+the exact exit cause still requires a macOS crash report. The regression suite
+exercises 200 rapid menu open/close cycles, 500 concurrent duplicate requests,
+stale completions and string conversion failures.
 Replace only the app in `/Applications`; keep your installed kext. No reboot is
 needed for this app update.
+
+If an older copy has stopped responding, quit that copy in Activity Monitor before
+opening the replacement from `/Applications`. If it has exited, collect its latest
+report from `~/Library/Logs/DiagnosticReports` or use the driver's log collector.
+You do not need to reproduce the failure or reboot to obtain an existing report.
 
 Version **2.0.3** serializes the connection animation on the main run loop and
 uses SystemConfiguration for interface details instead of unchecked route-buffer

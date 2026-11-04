@@ -3,6 +3,10 @@
 #include <assert.h>
 #include <stdio.h>
 int main(void) {
+    char short_text[4] = {'x','x','x','x'};
+    assert(!mt7902_string(CFSTR("overlong"), short_text, sizeof(short_text)));
+    assert(short_text[0] == 0 && short_text[3] == 0);
+    assert(!mt7902_string(kCFBooleanTrue, short_text, sizeof(short_text)) && short_text[0] == 0);
     struct mt7902_join j;
     assert(mt7902_encode_join(&j, "test", "12345678"));
     assert(j.version == 1 && sizeof(j) == 108 && !strcmp(j.ssid, "test") && !strcmp(j.passphrase, "12345678"));

@@ -168,9 +168,11 @@ class WifiMenuItemViewModern: SelectableMenuItemView, WifiMenuItemView {
         if connected {
             connected = false
             updateImages()
+            let ssid = networkInfo.ssid
             DispatchQueue.global().async {
-                dis_associate_ssid(self.networkInfo.ssid)
-                Log.debug("Disconnected from \(self.networkInfo.ssid)")
+                CredentialsManager.instance.setAutoJoin(ssid, false)
+                dis_associate_ssid(ssid)
+                Log.debug("Disconnected from \(ssid)")
             }
         } else {
             isMouseOver = false

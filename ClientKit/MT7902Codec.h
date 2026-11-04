@@ -27,8 +27,11 @@ static inline bool mt7902_should_refresh_scan(bool on, bool supported, const cha
 static inline bool mt7902_string(CFTypeRef v, char *out, size_t capacity) {
     if (!capacity) return false;
     out[0] = 0;
-    return v && CFGetTypeID(v) == CFStringGetTypeID() &&
+    bool ok = v && CFGetTypeID(v) == CFStringGetTypeID() &&
         CFStringGetCString((CFStringRef)v, out, (CFIndex)capacity, kCFStringEncodingUTF8);
+    out[capacity - 1] = 0;
+    if (!ok) out[0] = 0;
+    return ok;
 }
 static inline int32_t mt7902_number(CFTypeRef v) {
     int64_t n = 0;

@@ -373,13 +373,18 @@ class WiFiConfigWindow: NSWindow {
         makeKeyAndOrderFront(self)
     }
 
+    var onClose: (() -> Void)?
+
     override func close() {
+        let notify = onClose
+        onClose = nil
         // checks if window was shown as a sheet
         if let sheet = sheetParent {
             sheet.endSheet(self, returnCode: .cancel)
         } else {
             super.close()
         }
+        notify?()
     }
 }
 
@@ -569,6 +574,8 @@ extension WiFiConfigWindow {
         case .cancel, .close:
             close()
         case .join:
+            guard rightButton.isEnabled else { return }
+            rightButton.isEnabled = false
             windowState == .joinWiFi ? joinWiFi() : connect()
         default:
             Log.error("Unknown button pressed")

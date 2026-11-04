@@ -12,10 +12,38 @@ struct AppLifecycleTests {
     }
 
     static func main() {
-        precondition(MenuAppearance.select(osMajor: 25, legacyRequested: false) == .modern)
-        precondition(MenuAppearance.select(osMajor: 26, legacyRequested: false) == .tahoe)
-        precondition(MenuAppearance.select(osMajor: 27, legacyRequested: false) == .tahoe)
-        precondition(MenuAppearance.select(osMajor: 26, legacyRequested: true) == .legacy)
+        // Rapid open/close must leave no orphan timer or worker run loop.
+        let menuTimer = MainRunLoopTimer()
+        var refreshes = 0
+        for _ in 0..<200 {
+            menuTimer.start(interval: 0.005, immediately: true) {
+                precondition(Thread.isMainThread)
+                refreshes += 1
+            }
+            menuTimer.start(interval: 0.005, immediately: true) { preconditionFailure("Duplicate timer") }
+            menuTimer.stop()
+        }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.04))
+        precondition(refreshes == 200 && !menuTimer.isRunning)
+        menuTimer.start(interval: 0.005) { refreshes += 1 }
+        waitUntil { refreshes > 202 }
+        menuTimer.stop()
+        let closedCount = refreshes
+        RunLoop.main.run(until: Date().addingTimeInterval(0.04))
+        precondition(refreshes == closedCount)
+
+        let gate = WorkGate()
+        let first = gate.begin()!
+        precondition(gate.isBusy && gate.begin() == nil)
+        precondition(!gate.finish(UUID()) && gate.isCurrent(first))
+        precondition(gate.finish(first) && !gate.finish(first))
+        let second = gate.begin()!
+        precondition(!gate.finish(first) && gate.isCurrent(second))
+        DispatchQueue.concurrentPerform(iterations: 500) { _ in
+            precondition(gate.begin() == nil) // Repeated/concurrent clicks cannot start another join.
+        }
+        precondition(gate.finish(second) && !gate.isBusy)
+
         var frames: [Int] = []
         let animation = ConnectionAnimation(interval: 0.005, frameCount: { 3 }, render: {
             precondition(Thread.isMainThread)
@@ -72,6 +100,6 @@ struct AppLifecycleTests {
         precondition(InterfaceDetails.localAddress(bsd: "") == nil)
         precondition(InterfaceDetails.routerAddress(bsd: "") == nil)
         precondition(InterfaceDetails.macAddress(bsd: "mt7902-fixture-missing") == nil)
-        print("Passed main-thread animation cancellation/restart and missing-interface/typed snapshot regression tests")
+        print("Passed rapid menu open/close, duplicate/stale work, animation cancellation/restart and interface snapshot regressions")
     }
 }

@@ -36,8 +36,10 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
     private let statusUpdatePeriod: Double = 2
 
     var headerLength: Int = 0
-    private var networkListUpdateTimer: Timer?
-    private var statusUpdateTimer: Timer?
+    private let networkListUpdateTimer = MainRunLoopTimer()
+    private let statusUpdateTimer = MainRunLoopTimer()
+    private let statusRequest = WorkGate()
+    private let stationRequest = WorkGate()
 
     // One instance at a time
     private lazy var preferenceWindow = PrefsWindow()
@@ -56,15 +58,7 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
             case ITL80211_S_AUTH, ITL80211_S_ASSOC:
                 StatusBarIcon.shared().connecting()
             case ITL80211_S_RUN:
-                DispatchQueue.global(qos: .background).async {
-                    let isReachable = NetworkManager.isReachable()
-                    var staInfo = station_info_t()
-                    get_station_info(&staInfo)
-                    DispatchQueue.main.async {
-                        guard isReachable else { StatusBarIcon.shared().warning(); return }
-                        StatusBarIcon.shared().signalStrength(rssi: staInfo.rssi)
-                    }
-                }
+                break // The bounded station refresh supplies signal/reachability.
             case ITL80211_S_SCAN:
                 /** API does not report bgscan to HeliPort. During `ITL80211_S_RUN` the status
                  will never change to `ITL80211_S_SCAN` unless users manually disassociate.
@@ -185,19 +179,8 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
         (self as? StatusMenuItems)?.setupMenu()
         getDeviceInfo()
 
-        DispatchQueue.global(qos: .default).async {
-            self.statusUpdateTimer = Timer.scheduledTimer(
-                timeInterval: self.statusUpdatePeriod,
-                target: self,
-                selector: #selector(self.updateStatus),
-                userInfo: nil,
-                repeats: true
-            )
-
-            self.statusUpdateTimer?.fire()
-            let currentRunLoop = RunLoop.current
-            currentRunLoop.add(self.statusUpdateTimer!, forMode: .common)
-            currentRunLoop.run()
+        statusUpdateTimer.start(interval: statusUpdatePeriod, immediately: true) { [weak self] in
+            self?.updateStatus()
         }
 
         NSApp.servicesProvider = self
@@ -217,24 +200,14 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
     func menuWillOpen(_ menu: NSMenu) {
         showAllOptions = (NSApp.currentEvent?.modifierFlags.contains(.option)) ?? false
 
-        DispatchQueue.global(qos: .default).async {
-            self.updateStationItems()
-            self.networkListUpdateTimer = Timer.scheduledTimer(
-                timeInterval: self.networkListUpdatePeriod,
-                target: self,
-                selector: #selector(self.updateNetworkList),
-                userInfo: nil,
-                repeats: true
-            )
-            self.networkListUpdateTimer?.fire()
-            let currentRunLoop = RunLoop.current
-            currentRunLoop.add(self.networkListUpdateTimer!, forMode: .common)
-            currentRunLoop.run()
+        updateStationItems()
+        networkListUpdateTimer.start(interval: networkListUpdatePeriod, immediately: true) { [weak self] in
+            self?.updateNetworkList()
         }
     }
 
     func menuDidClose(_ menu: NSMenu) {
-        networkListUpdateTimer?.invalidate()
+        networkListUpdateTimer.stop()
         (menu.highlightedItem?.view as? SelectableMenuItemView)?.isMouseOver = false
     }
 
@@ -343,6 +316,7 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
     }
 
     @objc private func updateStatus() {
+        guard let token = statusRequest.begin() else { return }
         DispatchQueue.global(qos: .background).async {
             var powerState: Bool = false
             let get_power_ret = get_power_state(&powerState)
@@ -350,6 +324,7 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
             let get_state_ret = get_80211_state(&status)
 
             DispatchQueue.main.async {
+                self.statusRequest.finish(token)
                 if get_power_ret && get_state_ret {
                     self.isNetworkCardEnabled = powerState
                 } else {
@@ -379,26 +354,36 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
         var mcsIndex: String = .unavailable
         var nss: String = .unavailable
         var isNetworkConnected = false
+        var isReachable = false
     }
 
     func updateStationItems() {
-        guard isNetworkCardEnabled else { return }
+        guard isNetworkCardEnabled, let token = stationRequest.begin() else { return }
+        // Snapshot UI state before leaving main; the worker does not read AppKit state.
+        let state = driverState
+        let details = showAllOptions
 
         DispatchQueue.global(qos: .background).async {
-            let info = self.getStationInfo()
+            let info = self.getStationInfo(state: state, showDetails: details)
 
             DispatchQueue.main.async {
+                self.stationRequest.finish(token)
+                guard self.isNetworkCardEnabled, self.driverState == state else { return }
                 self.setCurrentNetworkItem(with: info)
                 self.setStationItems(with: info)
+                if info.isNetworkConnected {
+                    if info.isReachable { StatusBarIcon.shared().signalStrength(rssi: Int16(clamping: info.rssiValue)) }
+                    else { StatusBarIcon.shared().warning() }
+                }
             }
         }
     }
 
-    private func getStationInfo() -> StationInfo {
+    private func getStationInfo(state: itl_80211_state, showDetails: Bool) -> StationInfo {
         var infoOut = StationInfo()
         var infoIn = station_info_t()
 
-        guard driverState == ITL80211_S_RUN,
+        guard state == ITL80211_S_RUN,
               get_station_info(&infoIn) == KERN_SUCCESS else {
             return infoOut
         }
@@ -406,8 +391,9 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
         infoOut.isNetworkConnected = true
         infoOut.ssid = String(ssid: infoIn.ssid)
         infoOut.rssiValue = Int(infoIn.rssi)
+        infoOut.isReachable = NetworkManager.isReachable()
 
-        guard showAllOptions else { return infoOut }
+        guard showDetails else { return infoOut }
 
         var platformInfo = platform_info_t()
         if get_platform_info(&platformInfo) {
@@ -416,7 +402,7 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
             infoOut.routerAddr = NetworkManager.getRouterAddress(bsd: bsd) ?? .unknown
         }
 
-        infoOut.internet = NetworkManager.isReachable() ? .reachable : .unreachable
+        infoOut.internet = infoOut.isReachable ? .reachable : .unreachable
         infoOut.security = .unknown
         infoOut.bssid = String(format: "%02x:%02x:%02x:%02x:%02x:%02x",
                             infoIn.bssid.0,

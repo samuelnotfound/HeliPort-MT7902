@@ -17,12 +17,15 @@ import Cocoa
 
 @NSApplicationMain
 class AppDelegate: NSObject, NSApplicationDelegate {
+    private var statusItem: NSStatusItem?
+
     func applicationDidFinishLaunching(_ aNotification: Notification) {
 
         checkRunPath()
         checkAPI()
 
         let statusBar = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        statusItem = statusBar
 
         let legacyUIEnabled = {
             if #unavailable(macOS 11) {
@@ -31,9 +34,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return UserDefaults.standard.bool(forKey: .DefaultsKey.legacyUI)
         }()
 
-        let appearance = MenuAppearance.select(osMajor: ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
-                                               legacyRequested: legacyUIEnabled)
-        Log.debug("UI appearance: \(appearance.rawValue)")
+        Log.debug("UI appearance: \(legacyUIEnabled ? "legacy" : "modern")")
 
         let iconProvider: StatusBarIconProvider = {
             if #available(macOS 11, *), !legacyUIEnabled {
@@ -43,9 +44,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }()
         _ = StatusBarIcon.shared(statusBar: statusBar, icons: iconProvider)
 
-        if #available(macOS 26, *), appearance == .tahoe {
-            statusBar.menu = StatusMenuTahoe()
-        } else if #available(macOS 11, *), !legacyUIEnabled {
+        if #available(macOS 11, *), !legacyUIEnabled {
             statusBar.menu = StatusMenuModern()
         } else {
             statusBar.menu = StatusMenuLegacy()
@@ -53,6 +52,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private var drv_info = ioctl_driver_info()
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }
+
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        statusItem?.isVisible = true
+        return false
+    }
 
     private func checkDriver() -> Bool {
 

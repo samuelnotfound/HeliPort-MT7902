@@ -111,7 +111,9 @@ class SelectableMenuItemView: HidableMenuItemView {
 
         isMouseOver = false // NSWindow pop up could escape mouseExit
         menu.cancelTracking()
-        menu.performActionForItem(at: menu.index(of: menuItem))
+        let index = menu.index(of: menuItem)
+        guard index >= 0, index < menu.numberOfItems, menu.item(at: index) === menuItem else { return }
+        menu.performActionForItem(at: index)
     }
 
     // MARK: Overrides

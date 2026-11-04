@@ -14,71 +14,107 @@
  */
 
 import Foundation
+import AppKit
 import SystemConfiguration
 
 final class NetworkManager {
+    private static let connectionRequest = WorkGate()
+    private static let autoJoinRequest = WorkGate()
+    private static let autoJoinTimer = MainRunLoopTimer()
+    private static var authWindow: WiFiConfigWindow?
+    private static var scanCallbacks = [(Set<NetworkInfo>) -> Void]() // Main-thread only.
     static let supportedSecurityMode = [
         ITL80211_SECURITY_WPA2_PERSONAL
     ]
 
     static func connect(networkInfo: NetworkInfo, saveNetwork: Bool = false,
                         _ callback: ((_ result: Bool) -> Void)? = nil) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { connect(networkInfo: networkInfo, saveNetwork: saveNetwork, callback) }
+            return
+        }
+        guard let token = connectionRequest.begin() else {
+            Log.debug("Ignored repeated join while a connection or password prompt is active")
+            authWindow?.makeKeyAndOrderFront(nil)
+            callback?(false)
+            return
+        }
+
+        let finish: (Bool, String?) -> Void = { result, error in
+            DispatchQueue.main.async {
+                guard connectionRequest.finish(token) else { return }
+                authWindow = nil
+                if let error { Alert(text: error).show() }
+                callback?(result)
+            }
+        }
 
         guard networkInfo.canJoin != false else {
-            Alert(text: "This network is not joinable by the current MT7902 driver (WPA2-PSK/CCMP, optional PMF, supported channels only).").show()
-            callback?(false)
+            finish(false, "This network is not joinable by the current MT7902 driver (WPA2-PSK/CCMP, optional PMF, supported channels only).")
             return
         }
 
         guard supportedSecurityMode.contains(networkInfo.auth.security) else {
-            let alert = Alert(text: NSLocalizedString("Network security not supported: ")
-                              + networkInfo.auth.security.description)
-            alert.show()
-            callback?(false)
+            finish(false, NSLocalizedString("Network security not supported: ") + networkInfo.auth.security.description)
             return
         }
 
-        let getAuthInfoCallback: (_ auth: NetworkAuth, _ savePassword: Bool) -> Void = { auth, savePassword in
-            DispatchQueue.global(qos: .background).async {
+        // The menu refreshes and reuses NetworkInfo objects. A join owns a separate
+        // snapshot, so keychain work never mutates a row while AppKit renders it.
+        let request = NetworkInfo(ssid: networkInfo.ssid, rssi: networkInfo.rssi)
+        request.auth.security = networkInfo.auth.security
+        request.auth.password = networkInfo.auth.password
+        var submitted = false // Accessed only on main, including dialog close.
+        let getAuthInfoCallback: (NetworkAuth, Bool) -> Void = { auth, savePassword in
+            let submit = {
+                guard connectionRequest.isCurrent(token), !submitted else { return }
+                submitted = true
+                request.auth = auth
+                let password = auth.password
                 StatusBarIcon.shared().connecting()
-                let result = connect_network(networkInfo.ssid, auth.password)
-                DispatchQueue.main.async {
-                    if result {
-                        if savePassword {
-                            CredentialsManager.instance.save(networkInfo)
-                        }
-                    } else {
-                        Log.error("Failed to connect to: \(networkInfo.ssid)")
+                DispatchQueue.global(qos: .background).async {
+                    let result = connect_network(request.ssid, password)
+                    if result && savePassword { CredentialsManager.instance.save(request) }
+                    var detail: String?
+                    if !result {
                         var error = [CChar](repeating: 0, count: 256)
                         mt7902_copy_error(&error, error.count)
-                        let detail = String(cString: error)
-                        Alert(text: detail.isEmpty ? "The MT7902 driver could not join this network." : detail).show()
+                        let text = String(cString: error)
+                        detail = text.isEmpty ? "The MT7902 driver could not join this network." : text
                     }
-                    callback?(result)
+                    finish(result, detail)
                 }
             }
+            if Thread.isMainThread { submit() }
+            else { DispatchQueue.main.async(execute: submit) }
         }
 
         // Getting keychain access blocks UI Thread and makes everything freeze unless made async
         DispatchQueue.global().async {
-            if let savedNetworkAuth = CredentialsManager.instance.get(networkInfo) {
-                networkInfo.auth = savedNetworkAuth
-                Log.debug("Connecting to network \(networkInfo.ssid) with saved password")
-                CredentialsManager.instance.setAutoJoin(networkInfo.ssid, true)
-                getAuthInfoCallback(networkInfo.auth, false)
+            if let savedNetworkAuth = CredentialsManager.instance.get(request) {
+                CredentialsManager.instance.setAutoJoin(request.ssid, true)
+                getAuthInfoCallback(savedNetworkAuth, false)
                 return
             }
 
-            guard networkInfo.auth.security != ITL80211_SECURITY_NONE,
-                  networkInfo.auth.password.isEmpty else {
-                getAuthInfoCallback(networkInfo.auth, saveNetwork)
+            guard request.auth.security != ITL80211_SECURITY_NONE,
+                  request.auth.password.isEmpty else {
+                getAuthInfoCallback(request.auth, saveNetwork)
                 return
             }
 
             DispatchQueue.main.async {
-                WiFiConfigWindow(windowState: .connectWiFi,
-                                 networkInfo: networkInfo,
-                                 getAuthInfoCallback: getAuthInfoCallback).show()
+                guard connectionRequest.isCurrent(token) else { return }
+                let window = WiFiConfigWindow(windowState: .connectWiFi,
+                                              networkInfo: request,
+                                              getAuthInfoCallback: getAuthInfoCallback)
+                authWindow = window
+                window.onClose = {
+                    authWindow = nil
+                    if !submitted { finish(false, nil) }
+                }
+                window.show()
+                if !window.isVisible { window.close() }
             }
         }
     }
@@ -110,6 +146,12 @@ final class NetworkManager {
     }
 
     private static func scanNetwork(callback: @escaping (_ networkInfoList: Set<NetworkInfo>) -> Void) {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { scanNetwork(callback: callback) }
+            return
+        }
+        scanCallbacks.append(callback)
+        guard scanCallbacks.count == 1 else { return }
         DispatchQueue.global(qos: .background).async {
             var list = network_info_list_t()
             get_network_list(&list)
@@ -136,48 +178,41 @@ final class NetworkManager {
             }
 
             DispatchQueue.main.async {
-                callback(result)
+                let callbacks = scanCallbacks
+                scanCallbacks.removeAll()
+                callbacks.forEach { $0(result) }
             }
         }
     }
 
     static func scanSavedNetworks() {
+        guard Thread.isMainThread else {
+            DispatchQueue.main.async { scanSavedNetworks() }
+            return
+        }
+        guard let token = autoJoinRequest.begin() else { return }
         DispatchQueue.global(qos: .background).async {
             let savedNetworks: [NetworkInfo] = CredentialsManager.instance.getSavedNetworks()
-            guard savedNetworks.count > 0 else {
-                Log.debug("No network saved for auto join")
-                return
-            }
-            let scanTimer: Timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { timer in
-                NetworkManager.scanNetwork { networkList in
-                    let targetNetworks = savedNetworks.filter { networkList.contains($0) }
-                    if targetNetworks.count > 0 {
-                        // This will stop the timer completely
-                        timer.invalidate()
-                        Log.debug("Auto join timer stopped")
-                        connectSavedNetworks(networks: targetNetworks)
+            DispatchQueue.main.async {
+                guard !savedNetworks.isEmpty else { autoJoinRequest.finish(token); return }
+                autoJoinTimer.start(interval: 5, immediately: true) {
+                    guard !connectionRequest.isBusy, is_power_on() else { return }
+                    NetworkManager.scanNetwork { networkList in
+                        let targets = savedNetworks.filter { networkList.contains($0) }
+                        guard !targets.isEmpty else { return }
+                        autoJoinTimer.stop()
+                        autoJoinRequest.finish(token)
+                        connectSavedNetworks(networks: targets)
                     }
                 }
             }
-            // Start executing code inside the timer immediately
-            scanTimer.fire()
-            let currentRunLoop = RunLoop.current
-            currentRunLoop.add(scanTimer, forMode: .common)
-            currentRunLoop.run()
         }
     }
 
     private static func connectSavedNetworks(networks: [NetworkInfo]) {
-        DispatchQueue.global(qos: .background).async {
-            let dispatchSemaphore = DispatchSemaphore(value: 0)
-            var connected = false
-            for network in networks where !connected {
-                connect(networkInfo: network) { (result: Bool) in
-                    connected = result
-                    dispatchSemaphore.signal()
-                }
-                dispatchSemaphore.wait()
-            }
+        guard !connectionRequest.isBusy, let first = networks.first else { return }
+        connect(networkInfo: first) { connected in
+            if !connected { connectSavedNetworks(networks: Array(networks.dropFirst())) }
         }
     }
 
