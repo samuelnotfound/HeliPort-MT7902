@@ -10,9 +10,11 @@ concurrency:
   cancel-in-progress: true
 jobs:
   app:
-    # Build ARCHS=x86_64; use the Apple Silicon host while Intel runners queue.
-    runs-on: macos-26
+    # Match the Hackintosh's Intel architecture and use the Tahoe SDK.
+    runs-on: macos-26-intel
     timeout-minutes: 25
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.6.app/Contents/Developer
     steps:
       - uses: actions/checkout@v4
       - name: Build and test app-only adapter

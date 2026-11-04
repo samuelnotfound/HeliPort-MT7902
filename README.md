@@ -64,6 +64,11 @@ On macOS with Xcode and the macOS 26 SDK or newer installed (output is Intel x86
 bash scripts/build-macos.sh
 ```
 
+Actions uses `macos-26-intel` and explicitly selects Xcode 26.6. The shared
+`HeliPort` scheme builds the app and its login helper; both binaries are checked
+for x86_64 before packaging. The deployment target remains macOS 13, with Tahoe
+UI code guarded by runtime availability checks.
+
 This runs ABI/state/security/scan decoder fixtures with ASan/UBSan, builds the
 original Xcode UI project with the app-only MT7902 C adapter, signs it ad hoc and
 packages it with its license/notice. Dependencies are pinned in Package.resolved.
