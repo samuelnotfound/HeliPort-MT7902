@@ -7,24 +7,21 @@ preferences and original contributor notices are retained. See [LICENSE](LICENSE
 [NOTICE-MT7902.md](NOTICE-MT7902.md) and [original credits](docs/UPSTREAM-README.md).
 
 Driver and installation: [samuelnotfound/itlmt7902-wifi](https://github.com/samuelnotfound/itlmt7902-wifi).
-No MtkWlan/native driver is used. The Intel itlwm kernel driver is not used.
 
 ## Install
 
-1. Restore your previously hotspot-working standalone `itlmt7902.kext`. Disable
-   both `MtkWlan.kext` and `MtkWlanNative.kext` in OpenCore; those native builds
-   hard-froze the test machine. This application cannot fix or safely coexist with
-   that native experiment. A new driver installation needs a reboot; replacing
-   only this app does not.
+1. Install the standalone `itlmt7902.kext` using the driver repository's setup
+   instructions, or keep your existing working installation. A new driver
+   installation needs a reboot; replacing only this app does not.
 2. Download the latest successful Actions artifact **HeliPort-MT7902**, unzip its
    inner `HeliPort-MT7902.zip`, and copy **HeliPort-MT7902.app** into `/Applications`.
-3. Quit the old ItlWiFi7902/HeliPort/MtkWiFi apps and disable their login items so
+3. Quit other Wi-Fi control apps and disable their login items so
    only one app manages connections. Open HeliPort-MT7902, pick your network and
    enter the password. Save it to the keychain if desired. The menu offers both
    modern and legacy HeliPort appearances through Preferences.
 4. Keep your existing connection-mode configuration. If installing this driver
-   fresh, its stage-3 connection test requires `mt7902_stage=3`. No native Wi-Fi
-   boot arguments are needed. The app uses the existing ABI v1 and does not patch
+   fresh, its stage-3 connection test requires `mt7902_stage=3`.
+   The app uses the existing ABI v1 and does not patch
    or install the driver.
 
 The UI adapter is compile/fixture tested, **not yet hardware validated**. Known

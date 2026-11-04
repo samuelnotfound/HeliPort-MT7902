@@ -9,7 +9,6 @@ in docs/UPSTREAM-README.md. This fork is not an official OpenIntelWireless relea
 ClientKit/MT7902.c and MT7902Codec.h replace the app's compiled Intel ioctl transport
 with standalone itlmt7902 IOUserClient ABI v1 and registry snapshots. The original
 Api.c remains as upstream history/source reference but is not compiled by the app.
-No Intel kernel driver or MtkWlan code is included or loaded by this application.
 
 This app does not bundle or change a kernel extension. The standalone MT7902
 driver is separately maintained in samuelnotfound/itlmt7902-wifi. Driver protocols
