@@ -39,6 +39,10 @@ class StateSwitchMenuItemView: NSView {
         addSubview(stateSwitch)
 
         label.stringValue = title
+        if #available(macOS 26, *) {
+            label.font = NSFont.systemFont(ofSize: 17, weight: .semibold)
+            stateSwitch.controlSize = .large
+        }
         stateSwitch.action = #selector(switchValueDidChange)
         stateSwitch.target = self
 
@@ -72,7 +76,10 @@ class StateSwitchMenuItemView: NSView {
     private func setupLayout() {
         self.subviews.forEach { $0.translatesAutoresizingMaskIntoConstraints = false }
 
-        let heightConstraint = heightAnchor.constraint(equalToConstant: NSMenuItem.ItemHeight.networkModern.rawValue)
+        let rowHeight: CGFloat
+        if #available(macOS 26, *) { rowHeight = 48 }
+        else { rowHeight = NSMenuItem.ItemHeight.networkModern.rawValue }
+        let heightConstraint = heightAnchor.constraint(equalToConstant: rowHeight)
         heightConstraint.priority = NSLayoutConstraint.Priority(1000)
         heightConstraint.isActive = true
 
@@ -81,7 +88,10 @@ class StateSwitchMenuItemView: NSView {
 
         stateSwitch.centerYAnchor.constraint(equalTo: centerYAnchor).isActive = true
         stateSwitch.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -14).isActive = true
-        stateSwitch.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        label.trailingAnchor.constraint(lessThanOrEqualTo: stateSwitch.leadingAnchor, constant: -12).isActive = true
+        if #unavailable(macOS 26) {
+            stateSwitch.heightAnchor.constraint(equalToConstant: 30).isActive = true
+        }
     }
 
     @objc private func switchValueDidChange(sender: NSSwitch) {

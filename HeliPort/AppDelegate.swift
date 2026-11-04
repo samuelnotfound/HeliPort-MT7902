@@ -31,7 +31,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return UserDefaults.standard.bool(forKey: .DefaultsKey.legacyUI)
         }()
 
-        Log.debug("UI appearance: \(legacyUIEnabled ? "legacy" : "modern")")
+        let appearance = MenuAppearance.select(osMajor: ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
+                                               legacyRequested: legacyUIEnabled)
+        Log.debug("UI appearance: \(appearance.rawValue)")
 
         let iconProvider: StatusBarIconProvider = {
             if #available(macOS 11, *), !legacyUIEnabled {
@@ -41,7 +43,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }()
         _ = StatusBarIcon.shared(statusBar: statusBar, icons: iconProvider)
 
-        if #available(macOS 11, *), !legacyUIEnabled {
+        if #available(macOS 26, *), appearance == .tahoe {
+            statusBar.menu = StatusMenuTahoe()
+        } else if #available(macOS 11, *), !legacyUIEnabled {
             statusBar.menu = StatusMenuModern()
         } else {
             statusBar.menu = StatusMenuLegacy()

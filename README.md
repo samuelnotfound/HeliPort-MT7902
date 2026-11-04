@@ -36,9 +36,10 @@ the app refreshes results in scan-only mode and after a failed connection.
 
 ## Behavior and limits
 
-The app uses the original HeliPort modern menu on all supported macOS versions,
-including Tahoe. **Use Legacy UI** selects the classic menu; changing that
-preference restarts only the app.
+On macOS 26 and newer, the app uses native AppKit menu rows, system symbols,
+section headings and a larger Wi-Fi switch. Older systems retain the original
+HeliPort modern menu. **Use Legacy UI** selects the classic menu on any supported
+system; changing that preference restarts only the app.
 
 - Scan results and link/error state come from `itlmt7902` registry properties.
 - Join/disconnect use its existing IOUserClient selectors. Passphrases are never
@@ -55,13 +56,15 @@ preference restarts only the app.
 
 ## Build
 
-On macOS with Xcode 16.4 installed (output is Intel x86_64):
+On macOS 15 or newer with Xcode 26.3 installed (output is Intel x86_64):
 
 ```sh
 bash scripts/build-macos.sh
 ```
 
-Actions uses `macos-15-intel` and explicitly selects Xcode 16.4. The shared
+Actions uses `macos-15-intel` and explicitly selects its installed Xcode 26.3.
+The macOS 26 SDK is needed to build the Tahoe appearance, while the build host
+remains macOS 15. The shared
 `HeliPort` scheme builds the app and its login helper; both binaries are checked
 for x86_64 before packaging. The deployment target remains macOS 13.
 
@@ -72,8 +75,9 @@ Output: `build/dist/HeliPort-MT7902.zip`. No kext is built, installed or loaded.
 
 ## App updates
 
-Version **2.1.1** restores the original HeliPort menu on all supported systems and
-builds with Xcode 16.4 on the macOS 15 Intel runner.
+Version **2.1.2** restores automatic Tahoe styling while keeping the macOS 15
+Intel runner. It includes the SystemConfiguration compiler fix and app safety
+changes. Older macOS versions retain the original menu.
 Replace only the app in `/Applications`; keep your installed kext. No reboot is
 needed for this app update.
 
