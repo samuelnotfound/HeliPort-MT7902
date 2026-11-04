@@ -10,7 +10,8 @@ concurrency:
   cancel-in-progress: true
 jobs:
   app:
-    runs-on: macos-26-intel
+    # Build ARCHS=x86_64; use the Apple Silicon host while Intel runners queue.
+    runs-on: macos-26
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
