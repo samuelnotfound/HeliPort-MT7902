@@ -7,8 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		A79021010000000000000002 /* MenuAppearance.swift in Sources */ = {isa = PBXBuildFile; fileRef = A79021010000000000000001 /* MenuAppearance.swift */; };
-		A79021010000000000000004 /* StatusMenuTahoe.swift in Sources */ = {isa = PBXBuildFile; fileRef = A79021010000000000000003 /* StatusMenuTahoe.swift */; };
 		A79020010000000000000002 /* ConnectionAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A79020010000000000000001 /* ConnectionAnimation.swift */; };
 		A79020010000000000000004 /* InterfaceDetails.swift in Sources */ = {isa = PBXBuildFile; fileRef = A79020010000000000000003 /* InterfaceDetails.swift */; };
 		1317990B256986E5006957D8 /* String+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1317990A256986E5006957D8 /* String+Extensions.swift */; };
@@ -76,8 +74,6 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		A79021010000000000000001 /* MenuAppearance.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuAppearance.swift; sourceTree = "<group>"; };
-		A79021010000000000000003 /* StatusMenuTahoe.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusMenuTahoe.swift; sourceTree = "<group>"; };
 		A79020010000000000000001 /* ConnectionAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConnectionAnimation.swift; sourceTree = "<group>"; };
 		A79020010000000000000003 /* InterfaceDetails.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterfaceDetails.swift; sourceTree = "<group>"; };
 		1317990A256986E5006957D8 /* String+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extensions.swift"; sourceTree = "<group>"; };
@@ -175,7 +171,6 @@
 				5013B8FF2C5E1E00002C5006 /* StatusMenuBase.swift */,
 				5013B9012C5E1E36002C5006 /* StatusMenuLegacy.swift */,
 				5013B9032C5E1EA9002C5006 /* StatusMenuModern.swift */,
-				A79021010000000000000003 /* StatusMenuTahoe.swift */,
 			);
 			path = StatusMenu;
 			sourceTree = "<group>";
@@ -270,7 +265,6 @@
 		F34B2B8B24AA4C08009AB1BB /* Supporting files */ = {
 			isa = PBXGroup;
 			children = (
-				A79021010000000000000001 /* MenuAppearance.swift */,
 				A79020010000000000000001 /* ConnectionAnimation.swift */,
 				A79020010000000000000003 /* InterfaceDetails.swift */,
 				F33A1F3A24C83016008ED2BD /* Alert.swift */,
@@ -462,8 +456,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A79021010000000000000002 /* MenuAppearance.swift in Sources */,
-				A79021010000000000000004 /* StatusMenuTahoe.swift in Sources */,
 				A79020010000000000000002 /* ConnectionAnimation.swift in Sources */,
 				A79020010000000000000004 /* InterfaceDetails.swift in Sources */,
 				75FDF38C2481D25A00B2A601 /* Api.c in Sources */,
@@ -697,7 +689,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
 				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -719,7 +711,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.0;
+				MARKETING_VERSION = 2.1.1;
 				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
 				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;

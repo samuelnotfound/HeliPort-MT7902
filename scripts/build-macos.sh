@@ -8,16 +8,11 @@ xcodebuild -version
 plutil -lint HeliPort.xcodeproj/project.pbxproj
 sdk_version="$(xcrun --sdk macosx --show-sdk-version)"
 echo "macOS SDK: $sdk_version"
-if [[ "${sdk_version%%.*}" -lt 26 ]]; then
-    echo "Xcode with the macOS 26 SDK or newer is required for the Tahoe appearance." >&2
-    exit 1
-fi
 xcrun --sdk macosx clang -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined tests/mt7902_codec_test.c \
     -framework CoreFoundation -framework IOKit -o build/mt7902_codec_test
 build/mt7902_codec_test
 xcrun swiftc -swift-version 5 -parse-as-library -sanitize=address -g \
     'HeliPort/Supporting files/ConnectionAnimation.swift' \
-    'HeliPort/Supporting files/MenuAppearance.swift' \
     'HeliPort/Supporting files/InterfaceDetails.swift' tests/app_lifecycle_test.swift \
     -o build/app_lifecycle_test
 ASAN_OPTIONS=detect_leaks=0:halt_on_error=1 build/app_lifecycle_test

@@ -36,12 +36,9 @@ the app refreshes results in scan-only mode and after a failed connection.
 
 ## Behavior and limits
 
-On **macOS 26 Tahoe and newer**, the default appearance uses native AppKit menu
-rows, system symbols, section headers, a connected-network checkmark and a larger
-Wi-Fi switch. macOS supplies the menu material, light/dark appearance, contrast
-preferences, keyboard navigation and highlighting. macOS 13–25 keeps the existing
-modern UI. The **Use Legacy UI** preference overrides automatic selection on every
-supported version; changing that preference restarts only the app.
+The app uses the original HeliPort modern menu on all supported macOS versions,
+including Tahoe. **Use Legacy UI** selects the classic menu; changing that
+preference restarts only the app.
 
 - Scan results and link/error state come from `itlmt7902` registry properties.
 - Join/disconnect use its existing IOUserClient selectors. Passphrases are never
@@ -58,16 +55,15 @@ supported version; changing that preference restarts only the app.
 
 ## Build
 
-On macOS with Xcode and the macOS 26 SDK or newer installed (output is Intel x86_64):
+On macOS with Xcode 16.4 installed (output is Intel x86_64):
 
 ```sh
 bash scripts/build-macos.sh
 ```
 
-Actions uses `macos-26-intel` and explicitly selects Xcode 26.6. The shared
+Actions uses `macos-15-intel` and explicitly selects Xcode 16.4. The shared
 `HeliPort` scheme builds the app and its login helper; both binaries are checked
-for x86_64 before packaging. The deployment target remains macOS 13, with Tahoe
-UI code guarded by runtime availability checks.
+for x86_64 before packaging. The deployment target remains macOS 13.
 
 This runs ABI/state/security/scan decoder fixtures with ASan/UBSan, builds the
 original Xcode UI project with the app-only MT7902 C adapter, signs it ad hoc and
@@ -76,8 +72,8 @@ Output: `build/dist/HeliPort-MT7902.zip`. No kext is built, installed or loaded.
 
 ## App updates
 
-Version **2.1.0** automatically uses the Tahoe menu on macOS 26 and newer, while
-preserving the existing appearance on older systems and the Legacy UI preference.
+Version **2.1.1** restores the original HeliPort menu on all supported systems and
+builds with Xcode 16.4 on the macOS 15 Intel runner.
 Replace only the app in `/Applications`; keep your installed kext. No reboot is
 needed for this app update.
 
