@@ -125,7 +125,7 @@
 		F3915F0624AB1A1B00E6614D /* itl_80211_state+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "itl_80211_state+Extensions.swift"; sourceTree = "<group>"; };
 		F86A8972243CD40800CBABC2 /* Common.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Common.h; sourceTree = "<group>"; };
 		F8F6CF0A243D675800965B43 /* Api.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Api.h; sourceTree = "<group>"; };
-		F8F6CF0B243D675800965B43 /* Api.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = Api.c; sourceTree = "<group>"; };
+		F8F6CF0B243D675800965B43 /* Api.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = MT7902.c; sourceTree = "<group>"; };
 		F8F6CF0E243D67D800965B43 /* IoctlId.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = IoctlId.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -517,7 +517,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.OpenIntelWireless.HeliPort-Launcher";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.samuelnotfound.HeliPortMT7902-Launcher";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -535,7 +535,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.OpenIntelWireless.HeliPort-Launcher";
+				PRODUCT_BUNDLE_IDENTIFIER = "org.samuelnotfound.HeliPortMT7902-Launcher";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
 				SWIFT_VERSION = 5.0;
@@ -681,9 +681,9 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.OpenIntelWireless.HeliPort;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 2.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
+				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = HeliPort/Bridge.h;
 				SWIFT_VERSION = 5.0;
@@ -703,9 +703,9 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.0.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.OpenIntelWireless.HeliPort;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				MARKETING_VERSION = 2.0.1;
+				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
+				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OBJC_BRIDGING_HEADER = HeliPort/Bridge.h;
 				SWIFT_VERSION = 5.0;

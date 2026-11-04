@@ -48,9 +48,7 @@
 	<true/>
 	<key>NSSupportsSuddenTermination</key>
 	<false/>
-	<key>SUFeedURL</key>
-	<string>https://github.com/OpenIntelWireless/HeliPort/releases/latest/download/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>ktrt51VPmrIyECEE/mqZCmOSNFBX6HLCpP+OB1V6G28=</string>
+	<key>CFBundleDisplayName</key>
+	<string>HeliPort MT7902</string>
 </dict>
 </plist>

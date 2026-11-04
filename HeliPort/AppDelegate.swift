@@ -56,10 +56,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         let version = String(cCharArray: drv_info.driver_version)
         let interface = String(cCharArray: drv_info.bsd_name)
-        guard !version.isEmpty, !interface.isEmpty else {
-            Log.error("itlwm kext not loaded!")
+        guard !version.isEmpty else {
+            Log.error("itlmt7902 kext not loaded!")
 #if !DEBUG
-            let alert = CriticalAlert(message: NSLocalizedString("itlwm is not running"),
+            let alert = CriticalAlert(message: "itlmt7902 is not running. Restore the standalone Ethernet driver; this app does not use MtkWlan.",
                                       options: [NSLocalizedString("Dismiss"),
                                                 NSLocalizedString("Quit HeliPort")])
 
@@ -71,7 +71,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             return false
         }
 
-        Log.debug("Loaded itlwm \(version) as \(interface)")
+        Log.debug("Loaded itlmt7902 \(version), interface \(interface.isEmpty ? "pending connection" : interface)")
 
         return true
     }

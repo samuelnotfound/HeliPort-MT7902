@@ -29,6 +29,7 @@ class PrefsGeneralView: NSView {
                                 target: self,
                                 action: #selector(checkboxChanged(_:)))
         checkbox.identifier = .autoUpdateId
+        checkbox.isEnabled = false
         checkbox.state = UpdateManager.sharedUpdater.automaticallyChecksForUpdates ? .on : .off
         return checkbox
     }()
@@ -38,6 +39,7 @@ class PrefsGeneralView: NSView {
                                 target: self,
                                 action: #selector(checkboxChanged(_:)))
         checkbox.identifier = .autoDownloadId
+        checkbox.isEnabled = false
         checkbox.state = UpdateManager.sharedUpdater.automaticallyDownloadsUpdates ? .on : .off
         return checkbox
     }()

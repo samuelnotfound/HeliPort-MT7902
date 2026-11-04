@@ -1,0 +1,31 @@
+name: HeliPort MT7902 app
+on:
+  push:
+    branches: ['codex/mt7902-ethernet-ui']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: heliport-mt7902-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  app:
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and test app-only adapter
+        run: |
+          mkdir -p build
+          bash scripts/build-macos.sh > build/compile.log 2>&1 || { tail -100 build/compile.log; exit 1; }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: HeliPort-MT7902
+          path: build/dist/*
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: HeliPort-MT7902-build-log
+          path: build/compile.log
+          if-no-files-found: ignore

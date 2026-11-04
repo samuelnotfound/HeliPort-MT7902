@@ -193,6 +193,9 @@ struct ioctl_network_info {
     u_int16_t               ni_rsncaps;
     enum itl80211_cipher    ni_rsncipher;
     uint32_t                recv_timestamp;
+    // App-only MT7902 adapter metadata. This struct is never sent to the MT7902 kext.
+    enum itl80211_security mt7902_security;
+    uint8_t mt7902_joinable;
 };
 
 #endif /* Common_h */

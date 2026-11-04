@@ -1,64 +1,61 @@
-# HeliPort
+# HeliPort MT7902
 
-[![CI](https://github.com/OpenIntelWireless/HeliPort/actions/workflows/main.yml/badge.svg)](https://github.com/OpenIntelWireless/HeliPort/actions/workflows/main.yml)
+HeliPort's menu-bar UI adapted to the **standalone itlmt7902 Ethernet driver**.
+This is a fork of [OpenIntelWireless/HeliPort](https://github.com/OpenIntelWireless/HeliPort),
+not an official OpenIntelWireless release. UI, icons, keychain management,
+preferences and original contributor notices are retained. See [LICENSE](LICENSE),
+[NOTICE-MT7902.md](NOTICE-MT7902.md) and [original credits](docs/UPSTREAM-README.md).
 
-Intel WiFi Client for [itlwm](https://github.com/OpenIntelWireless/itlwm)
+Driver and installation: [samuelnotfound/itlmt7902-wifi](https://github.com/samuelnotfound/itlmt7902-wifi).
+No MtkWlan/native driver is used. The Intel itlwm kernel driver is not used.
 
-## Chat
+## Install
 
-If you have any questions or feedback, feel free to [![Join the chat at https://gitter.im/OpenIntelWireless/itlwm](https://badges.gitter.im/OpenIntelWireless/itlwm.svg)](https://gitter.im/OpenIntelWireless/itlwm?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+1. Restore your previously hotspot-working standalone `itlmt7902.kext`. Disable
+   both `MtkWlan.kext` and `MtkWlanNative.kext` in OpenCore; those native builds
+   hard-froze the test machine. This application cannot fix or safely coexist with
+   that native experiment. A new driver installation needs a reboot; replacing
+   only this app does not.
+2. Download the latest successful Actions artifact **HeliPort-MT7902**, unzip its
+   inner `HeliPort-MT7902.zip`, and copy **HeliPort-MT7902.app** into `/Applications`.
+3. Quit the old ItlWiFi7902/HeliPort/MtkWiFi apps and disable their login items so
+   only one app manages connections. Open HeliPort-MT7902, pick your network and
+   enter the password. Save it to the keychain if desired. The menu offers both
+   modern and legacy HeliPort appearances through Preferences.
+4. Keep your existing connection-mode configuration. If installing this driver
+   fresh, its stage-3 connection test requires `mt7902_stage=3`. No native Wi-Fi
+   boot arguments are needed. The app uses the existing ABI v1 and does not patch
+   or install the driver.
 
-## Download
+The UI adapter is compile/fixture tested, **not yet hardware validated**. Known
+hotspot connectivity belongs to the standalone driver, not to this new app.
+Router interoperability is unchanged; this does not add WPA3, enterprise, open
+networks, roaming, native Wi-Fi or faster PHY modes to the driver.
 
-### Latest Stable Version
+## Behavior and limits
 
-[![Download from https://github.com/OpenIntelWireless/HeliPort/releases/latest](https://img.shields.io/github/v/release/OpenIntelWireless/HeliPort?color=%2300AABB&label=Download)](https://github.com/OpenIntelWireless/HeliPort/releases/latest)
+- Scan results and link/error state come from `itlmt7902` registry properties.
+- Join/disconnect use its existing IOUserClient selectors. Passphrases are never
+  passed to a shell, published to ioreg, logged or added to a kext plist.
+- The Ethernet interface can be created only after connection. That is allowed
+  at launch; the app no longer assumes a BSD interface must exist before joining.
+- WPA2-PSK/CCMP and supported-channel decisions come from the driver. Unsupported
+  networks are shown but refused instead of pretending the hardware supports them.
+- BSSID/noise/MCS/PHY values not supplied by the existing driver show as unknown.
+- The menu's power switch is a **software connection switch**. Off disconnects
+  and prevents this app's joins; it does not power down the radio or kext.
+- Automatic stock HeliPort updates are disabled so they cannot replace this
+  adapter. This app has a separate bundle ID/keychain namespace.
 
-### Latest Alpha Version
+## Build
 
-[![Download from https://github.com/OpenIntelWireless/HeliPort/releases](https://img.shields.io/github/v/release/OpenIntelWireless/HeliPort?include_prereleases&label=Download)](https://github.com/OpenIntelWireless/HeliPort/releases)
+On Intel macOS with Xcode installed:
 
-## Status
+```sh
+bash scripts/build-macos.sh
+```
 
-The App is currently functional, we're still trying make it even better.
-
-### To-Do's
-
-Visit [Projects](https://github.com/OpenIntelWireless/HeliPort/projects) for more information
-
-## Issues
-
-Issues for this project are for bug tracking only, please carefully fill in all the blanks in the correct Issue Template.
-
-The following types of "Issues" will be considered as invalid and will be closed and locked immediately:
-
-- Personal help request
-- Duplicated issues
-- Urging updates
-- Spam
-- Non-English or non-Chinese content
-- Easy "Googleable" questions
-  > How to build etc.
-- Off-topic discussion
-  > Including mentioning and distributing closed-source, non-official Intel Wi-Fi Projects.
-
-## Contributing
-
-We desperately need contributors to help us improve this project, any help will be highly appreciated.
-
-- User interface and password management is implemented with `Swift 5`
-- Communication with [itlwm](https://github.com/OpenIntelWireless/itlwm) is implemented with `C`
-
-## Credits
-
-- [@1Revenger1](https://github.com/1Revenger1) for Keychain password management improvements
-- [@Bat.bat](https://github.com/williambj1) for repository management and Sparkle integration
-- [@diepeterpan](https://github.com/diepeterpan) for fixing UI artifacts on macOS Sonoma and performance optimizations
-- [@DogAndPot](https://github.com/DogAndPot) for initial UI implementation
-- [@ErrorErrorError](https://github.com/ErrorErrorError) for UI improvement, Preference Window implementation and more
-- [@Goshin](https://github.com/Goshin) for API implementation, Status Menu improvements and more
-- [@igorkulman](https://github.com/igorkulman) for code refactoring, password management and more
-- [@zxystd](https://github.com/zxystd) for writing [itlwm](https://github.com/OpenIntelWireless/itlwm) and APIs
-- [Everyone](https://github.com/OpenIntelWireless/HeliPort/pulls?q=is%3Apr+label%3Adocumentation+is%3Aclosed) who contributed to localization files
-- Legacy WiFi icons are from <https://icons8.com/>
-- Modern WiFi icons are from <https://github.com/framework7io/framework7-icons> (MIT License)
+This runs ABI/state/security/scan decoder fixtures with ASan/UBSan, builds the
+original Xcode UI project with the app-only MT7902 C adapter, signs it ad hoc and
+packages it with its license/notice. Dependencies are pinned in Package.resolved.
+Output: `build/dist/HeliPort-MT7902.zip`. No kext is built, installed or loaded.

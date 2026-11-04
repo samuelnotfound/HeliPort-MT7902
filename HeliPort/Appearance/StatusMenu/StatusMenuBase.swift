@@ -148,6 +148,7 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
          let item = HPMenuItem(title: .checkUpdates)
          item.target = UpdateManager.sharedController
          item.action = #selector(SPUStandardUpdaterController.checkForUpdates(_:))
+         item.isHidden = true // Stock HeliPort updates would replace the MT7902 adapter.
          return item
      }()
     let quitSeparator = NSMenuItem.separator()
@@ -274,8 +275,9 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
             }
 
             if get_platform_info(&platformInfo) {
-                bsdName = String(cCharArray: platformInfo.device_info_str)
-                macAddr = NetworkManager.getMACAddressFromBSD(bsd: bsdName) ?? macAddr
+                let name = String(cCharArray: platformInfo.device_info_str)
+                bsdName = name.isEmpty ? "Pending connection" : name
+                if !name.isEmpty { macAddr = NetworkManager.getMACAddressFromBSD(bsd: name) ?? macAddr }
                 itlwmVer = String(cCharArray: platformInfo.driver_info_str)
             }
 
@@ -431,6 +433,11 @@ class StatusMenuBase: NSMenu, NSMenuDelegate {
         infoOut.phyMode = infoIn.op_mode.description
         infoOut.mcsIndex = "\(infoIn.cur_mcs)"
         infoOut.nss = .unknown
+        // The existing MT7902 registry ABI does not expose these measurements.
+        infoOut.bssid = .unknown
+        infoOut.noise = .unknown
+        infoOut.mcsIndex = .unknown
+        infoOut.phyMode = .unknown
 
         return infoOut
     }

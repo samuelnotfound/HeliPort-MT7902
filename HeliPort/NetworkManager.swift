@@ -18,21 +18,23 @@ import SystemConfiguration
 
 final class NetworkManager {
     static let supportedSecurityMode = [
-        ITL80211_SECURITY_NONE,
-        ITL80211_SECURITY_WEP,
-        ITL80211_SECURITY_WPA_PERSONAL,
-        ITL80211_SECURITY_WPA_PERSONAL_MIXED,
-        ITL80211_SECURITY_WPA2_PERSONAL,
-        ITL80211_SECURITY_PERSONAL
+        ITL80211_SECURITY_WPA2_PERSONAL
     ]
 
     static func connect(networkInfo: NetworkInfo, saveNetwork: Bool = false,
                         _ callback: ((_ result: Bool) -> Void)? = nil) {
 
+        guard networkInfo.canJoin != false else {
+            Alert(text: "This network is not joinable by the current MT7902 driver (WPA2-PSK/CCMP, optional PMF, supported channels only).").show()
+            callback?(false)
+            return
+        }
+
         guard supportedSecurityMode.contains(networkInfo.auth.security) else {
             let alert = Alert(text: NSLocalizedString("Network security not supported: ")
                               + networkInfo.auth.security.description)
             alert.show()
+            callback?(false)
             return
         }
 
@@ -47,6 +49,10 @@ final class NetworkManager {
                         }
                     } else {
                         Log.error("Failed to connect to: \(networkInfo.ssid)")
+                        var error = [CChar](repeating: 0, count: 256)
+                        mt7902_copy_error(&error, error.count)
+                        let detail = String(cString: error)
+                        Alert(text: detail.isEmpty ? "The MT7902 driver could not join this network." : detail).show()
                     }
                     callback?(result)
                 }
@@ -125,6 +131,7 @@ final class NetworkManager {
                     rssi: Int(network.rssi)
                 )
                 networkInfo.auth.security = getSecurityType(network)
+                networkInfo.canJoin = network.mt7902_joinable != 0
                 result.insert(networkInfo)
             }
 
@@ -290,38 +297,7 @@ final class NetworkManager {
     }
 
     static func getSecurityType(_ info: ioctl_network_info) -> itl80211_security {
-        if info.supported_rsnprotos & ITL80211_PROTO_RSN.rawValue != 0 {
-            // WPA2
-            if info.rsn_akms & ITL80211_AKM_8021X.rawValue != 0 {
-                if info.supported_rsnprotos & ITL80211_PROTO_WPA.rawValue != 0 {
-                    return ITL80211_SECURITY_WPA_ENTERPRISE_MIXED
-                }
-                return ITL80211_SECURITY_WPA2_ENTERPRISE
-            } else if info.rsn_akms & ITL80211_AKM_PSK.rawValue != 0 {
-                if info.supported_rsnprotos & ITL80211_PROTO_WPA.rawValue != 0 {
-                    return ITL80211_SECURITY_WPA_PERSONAL_MIXED
-                }
-                return ITL80211_SECURITY_WPA2_PERSONAL
-            } else if info.rsn_akms & ITL80211_AKM_SHA256_8021X.rawValue != 0 {
-                return ITL80211_SECURITY_WPA2_ENTERPRISE
-            } else if info.rsn_akms & ITL80211_AKM_SHA256_PSK.rawValue != 0 {
-                return ITL80211_SECURITY_PERSONAL
-            }
-        } else if info.supported_rsnprotos & ITL80211_PROTO_WPA.rawValue != 0 {
-            // WPA
-            if info.rsn_akms & ITL80211_AKM_8021X.rawValue != 0 {
-                return ITL80211_SECURITY_WPA_ENTERPRISE
-            } else if info.rsn_akms & ITL80211_AKM_PSK.rawValue != 0 {
-                return ITL80211_SECURITY_WPA_PERSONAL
-            } else if info.rsn_akms & ITL80211_AKM_SHA256_8021X.rawValue != 0 {
-                return ITL80211_SECURITY_WPA_ENTERPRISE
-            } else if info.rsn_akms & ITL80211_AKM_SHA256_PSK.rawValue != 0 {
-                return ITL80211_SECURITY_ENTERPRISE
-            }
-        } else if info.supported_rsnprotos == 0 {
-            return ITL80211_SECURITY_NONE
-        }
-        return ITL80211_SECURITY_UNKNOWN
+        return info.mt7902_security
     }
 
     private static func getRouterAddressFromNetstat(_ bsd: String) -> String? {

@@ -79,5 +79,6 @@ kern_return_t associate_ssid(const char *ssid, const char *pwd);
 kern_return_t dis_associate_ssid(const char *ssid);
 
 void api_terminate(void);
+void mt7902_copy_error(char *out, size_t capacity);
 
 #endif /* Api_h */

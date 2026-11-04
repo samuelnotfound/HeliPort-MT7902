@@ -18,6 +18,7 @@ import Foundation
 final class NetworkInfo: Codable {
     let ssid: String
     var rssi: Int
+    var canJoin: Bool?
 
     var auth = NetworkAuth()
 
