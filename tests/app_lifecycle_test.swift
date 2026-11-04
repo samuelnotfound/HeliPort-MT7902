@@ -12,6 +12,10 @@ struct AppLifecycleTests {
     }
 
     static func main() {
+        precondition(MenuAppearance.select(osMajor: 25, legacyRequested: false) == .modern)
+        precondition(MenuAppearance.select(osMajor: 26, legacyRequested: false) == .tahoe)
+        precondition(MenuAppearance.select(osMajor: 27, legacyRequested: false) == .tahoe)
+        precondition(MenuAppearance.select(osMajor: 26, legacyRequested: true) == .legacy)
         var frames: [Int] = []
         let animation = ConnectionAnimation(interval: 0.005, frameCount: { 3 }, render: {
             precondition(Thread.isMainThread)

@@ -36,6 +36,13 @@ the app refreshes results in scan-only mode and after a failed connection.
 
 ## Behavior and limits
 
+On **macOS 26 Tahoe and newer**, the default appearance uses native AppKit menu
+rows, system symbols, section headers, a connected-network checkmark and a larger
+Wi-Fi switch. macOS supplies the menu material, light/dark appearance, contrast
+preferences, keyboard navigation and highlighting. macOS 13–25 keeps the existing
+modern UI. The **Use Legacy UI** preference overrides automatic selection on every
+supported version; changing that preference restarts only the app.
+
 - Scan results and link/error state come from `itlmt7902` registry properties.
 - Join/disconnect use its existing IOUserClient selectors. Passphrases are never
   passed to a shell, published to ioreg, logged or added to a kext plist.
@@ -51,7 +58,7 @@ the app refreshes results in scan-only mode and after a failed connection.
 
 ## Build
 
-On Intel macOS with Xcode installed:
+On macOS with Xcode and the macOS 26 SDK or newer installed (output is Intel x86_64):
 
 ```sh
 bash scripts/build-macos.sh
@@ -63,6 +70,11 @@ packages it with its license/notice. Dependencies are pinned in Package.resolved
 Output: `build/dist/HeliPort-MT7902.zip`. No kext is built, installed or loaded.
 
 ## App updates
+
+Version **2.1.0** automatically uses the Tahoe menu on macOS 26 and newer, while
+preserving the existing appearance on older systems and the Legacy UI preference.
+Replace only the app in `/Applications`; keep your installed kext. No reboot is
+needed for this app update.
 
 Version **2.0.3** serializes the connection animation on the main run loop and
 uses SystemConfiguration for interface details instead of unchecked route-buffer
