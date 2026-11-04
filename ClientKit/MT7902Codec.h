@@ -20,6 +20,10 @@ static inline uint32_t mt7902_state(const char *s) {
     if (!strcmp(s, "scanning")) return ITL80211_S_SCAN;
     return ITL80211_S_INIT;
 }
+static inline bool mt7902_should_refresh_scan(bool on, bool supported, const char *state) {
+    return on && supported && state &&
+        (!strcmp(state, "idle") || !strcmp(state, "scan-ready") || !strcmp(state, "failed"));
+}
 static inline bool mt7902_string(CFTypeRef v, char *out, size_t capacity) {
     if (!capacity) return false;
     out[0] = 0;

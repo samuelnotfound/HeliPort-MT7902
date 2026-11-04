@@ -44,8 +44,12 @@ void mt7902_copy_error(char *out, size_t capacity) {
     io_service_t s = service(); out[0] = 0;
     if (!s) { strlcpy(out, "itlmt7902 is not loaded. Restore the standalone Ethernet driver.", capacity); return; }
     string_property(s, CFSTR("wifi-error"), out, capacity);
-    if (!bool_property(s, CFSTR("join-supported")))
-        strlcpy(out, "The driver has not enabled connections. Wait for initialization and check mt7902_stage=3.", capacity);
+    if (!bool_property(s, CFSTR("join-supported"))) {
+        if (number_property(s, CFSTR("diagnostic-stage")) == 2)
+            strlcpy(out, "The driver is in scan-only stage 2. Add mt7902_stage=3 to OpenCore boot-args and reboot to enable connections.", capacity);
+        else if (!out[0])
+            strlcpy(out, "The driver has not enabled connections. Check the driver initialization log and diagnostic-stage in ioreg.", capacity);
+    }
     IOObjectRelease(s);
 }
 bool get_platform_info(platform_info_t *out) {
@@ -107,8 +111,9 @@ bool get_network_list(network_info_list_t *out) {
     if (v) CFRelease(v);
     bool canScan = bool_property(s, CFSTR("scan-supported"));
     char state[32]; string_property(s, CFSTR("wifi-state"), state, sizeof(state)); IOObjectRelease(s);
-    // The backend refuses scans while connected; always deliver its cache, never clear it on Busy.
-    if (enabled() && canScan && !strcmp(state, "idle")) command(0, NULL, 0);
+    // Stage 2 stays in scan-ready, and a failed stage-3 join stays failed.
+    // Both can rescan. The worker throttles requests; keep delivering its cache on Busy.
+    if (mt7902_should_refresh_scan(enabled(), canScan, state)) command(0, NULL, 0);
     return true;
 }
 kern_return_t associate_ssid(const char *ssid, const char *password) {

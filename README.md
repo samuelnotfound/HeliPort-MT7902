@@ -29,6 +29,11 @@ hotspot connectivity belongs to the standalone driver, not to this new app.
 Router interoperability is unchanged; this does not add WPA3, enterprise, open
 networks, roaming, native Wi-Fi or faster PHY modes to the driver.
 
+If the app reports scan-only stage 2, add `mt7902_stage=3` to your existing
+OpenCore NVRAM `boot-args` and reboot once. Without this argument, the current
+driver defaults to scanning only. Keep the menu open while a scan completes;
+the app refreshes results in scan-only mode and after a failed connection.
+
 ## Behavior and limits
 
 - Scan results and link/error state come from `itlmt7902` registry properties.

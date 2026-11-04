@@ -14,6 +14,15 @@ int main(void) {
     assert(mt7902_state("connected") == ITL80211_S_RUN);
     assert(mt7902_state("connecting") == ITL80211_S_AUTH);
     assert(mt7902_state("failed") == ITL80211_S_INIT);
+    assert(mt7902_should_refresh_scan(true, true, "idle"));
+    assert(mt7902_should_refresh_scan(true, true, "scan-ready"));
+    assert(mt7902_should_refresh_scan(true, true, "failed"));
+    assert(!mt7902_should_refresh_scan(true, true, "connected"));
+    assert(!mt7902_should_refresh_scan(true, true, "connecting"));
+    assert(!mt7902_should_refresh_scan(true, true, "scanning"));
+    assert(!mt7902_should_refresh_scan(false, true, "idle"));
+    assert(!mt7902_should_refresh_scan(true, false, "scan-ready"));
+    assert(!mt7902_should_refresh_scan(true, true, NULL));
     assert(mt7902_security("wpa2/wpa3") == ITL80211_SECURITY_WPA2_PERSONAL);
     assert(mt7902_security("enterprise") == ITL80211_SECURITY_WPA2_ENTERPRISE);
     assert(mt7902_security("unexpected") == ITL80211_SECURITY_UNKNOWN);
@@ -30,5 +39,5 @@ int main(void) {
     assert(!mt7902_decode_network((CFDictionaryRef)CFSTR("malformed"), &n));
     assert(!mt7902_decode_network(NULL, &n));
     CFRelease(d); CFRelease(rssi); CFRelease(ch);
-    puts("Passed MT7902 command ABI, bounds, state/security and signed scan decoding fixtures");
+    puts("Passed MT7902 command ABI, scan refresh policy, bounds, state/security and signed scan decoding fixtures");
 }
