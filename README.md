@@ -26,8 +26,8 @@ Driver and installation: [samuelnotfound/itlmt7902-wifi](https://github.com/samu
 
 The UI adapter is compile/fixture tested, **not yet hardware validated**. Known
 hotspot connectivity belongs to the standalone driver, not to this new app.
-Router interoperability is unchanged; this does not add WPA3, enterprise, open
-networks, roaming, native Wi-Fi or faster PHY modes to the driver.
+Open networks require driver 0.2.16 or newer. WPA3, enterprise, roaming, native
+Wi-Fi and faster PHY modes remain outside this adapter's supported scope.
 
 If the app reports scan-only stage 2, add `mt7902_stage=3` to your existing
 OpenCore NVRAM `boot-args` and reboot once. Without this argument, the current
@@ -45,7 +45,7 @@ preference restarts only the app.
   passed to a shell, published to ioreg, logged or added to a kext plist.
 - The Ethernet interface can be created only after connection. That is allowed
   at launch; the app no longer assumes a BSD interface must exist before joining.
-- WPA2-PSK/CCMP and supported-channel decisions come from the driver. Unsupported
+- Open/WPA2-PSK/CCMP and supported-channel decisions come from the driver. Unsupported
   networks are shown but refused instead of pretending the hardware supports them.
 - BSSID/noise/MCS/PHY values not supplied by the existing driver show as unknown.
 - The menu's power switch is a **software connection switch**. Off disconnects
@@ -71,6 +71,11 @@ packages it with its license/notice. Dependencies are pinned in Package.resolved
 Output: `build/dist/HeliPort-MT7902.zip`. No kext is built, installed or loaded.
 
 ## App updates
+
+Version **2.1.5** prevents menu/background Keychain authorization prompts and
+reuses credentials already authorized during this app session. Open hotspots
+connect without a password with driver 0.2.16. See [release notes](docs/RELEASE-2.1.5.md).
+Replacing only the app needs no reboot; open support also requires the kext update.
 
 Version **2.1.3** restores the original modern/legacy menu on every supported
 macOS version. Menu polling uses one main-run-loop timer per task, overlapping

@@ -14,6 +14,7 @@
  */
 
 import Foundation
+import Security
 
 final class NetworkInfo: Codable {
     let ssid: String
@@ -72,5 +73,52 @@ final class NetworkInfoStorageEntity: Codable {
         self.network = network
         self.autoJoin = autoJoin
         self.order = order
+    }
+}
+
+// Process-local snapshots: retries never re-authorize the same password, and a
+// failed background join is attempted once until the user retries or it succeeds.
+final class JoinSession {
+    private let lock = NSLock()
+    private var authBySSID = [String: NetworkAuth]()
+    private var attempted = Set<String>()
+    func remember(_ network: NetworkInfo, auth: NetworkAuth) {
+        lock.lock(); defer { lock.unlock() }
+        let copy = NetworkAuth()
+        copy.security = auth.security; copy.password = auth.password
+        authBySSID[network.ssid] = copy
+        attempted.insert(network.ssid)
+    }
+    func credentials(for network: NetworkInfo) -> NetworkAuth? {
+        lock.lock(); defer { lock.unlock() }
+        guard let saved = authBySSID[network.ssid], saved.security == network.auth.security else { return nil }
+        let copy = NetworkAuth()
+        copy.security = saved.security; copy.password = saved.password
+        return copy
+    }
+    func beginAutomaticJoin(_ ssid: String) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return attempted.insert(ssid).inserted
+    }
+    func succeeded(_ ssid: String) {
+        lock.lock(); defer { lock.unlock() }
+        attempted.remove(ssid)
+    }
+    func forget(_ ssid: String) {
+        lock.lock(); defer { lock.unlock() }
+        authBySSID.removeValue(forKey: ssid); attempted.remove(ssid)
+    }
+}
+
+// Listing SSIDs/security must never request password data or show authorization UI.
+enum SavedNetworkMetadata {
+    static func query(service: String, ssid: String) -> [String: Any] {
+        [kSecClass as String: kSecClassGenericPassword,
+         kSecAttrService as String: service,
+         kSecAttrAccount as String: ssid,
+         kSecAttrSynchronizable as String: kSecAttrSynchronizableAny,
+         kSecMatchLimit as String: kSecMatchLimitOne,
+         kSecReturnAttributes as String: true,
+         kSecUseAuthenticationUI as String: kSecUseAuthenticationUIFail]
     }
 }

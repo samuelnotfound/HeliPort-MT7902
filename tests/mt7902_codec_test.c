@@ -10,6 +10,9 @@ int main(void) {
     struct mt7902_join j;
     assert(mt7902_encode_join(&j, "test", "12345678"));
     assert(j.version == 1 && sizeof(j) == 108 && !strcmp(j.ssid, "test") && !strcmp(j.passphrase, "12345678"));
+    assert(mt7902_encode_join(&j, "open-fixture", ""));
+    assert(j.version == 1 && !j.passphrase[0]);
+    assert(!mt7902_encode_join(&j, "test", NULL));
     assert(!mt7902_encode_join(&j, "", "12345678"));
     assert(!mt7902_encode_join(&j, "test", "1234567"));
     assert(!mt7902_encode_join(&j, "123456789012345678901234567890123", "12345678"));

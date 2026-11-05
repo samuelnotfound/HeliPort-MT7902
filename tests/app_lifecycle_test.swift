@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: BSD-3-Clause
 import Foundation
+import Security
 
 @main
 struct AppLifecycleTests {
@@ -39,6 +40,29 @@ struct AppLifecycleTests {
         let targets = NetworkInfo.currentJoinTargets(saved: [missing, stale, blocked], visible: [live, blocked])
         precondition(targets.count == 1 && targets[0] === live)
         precondition(stale.auth.security == ITL80211_SECURITY_NONE)
+
+        // Real menu query contains attributes only; never credentials or UI.
+        let query = SavedNetworkMetadata.query(service: "fixture-service", ssid: "fixture")
+        precondition(query[kSecReturnData as String] == nil)
+        precondition(query[kSecReturnAttributes as String] as? Bool == true)
+        precondition(query[kSecUseAuthenticationUI as String] as? String == kSecUseAuthenticationUIFail as String)
+        let session = JoinSession()
+        precondition(session.beginAutomaticJoin(live.ssid))
+        precondition(!session.beginAutomaticJoin(live.ssid))
+        session.remember(live, auth: live.auth)
+        let cached = session.credentials(for: live)!
+        cached.password = "changed-by-caller"
+        precondition(session.credentials(for: live)!.password == "fixture-secret-password")
+        let changedSecurity = NetworkInfo(ssid: live.ssid)
+        precondition(session.credentials(for: changedSecurity) == nil)
+        session.succeeded(live.ssid)
+        precondition(session.beginAutomaticJoin(live.ssid))
+        session.forget(live.ssid)
+        precondition(session.credentials(for: live) == nil && session.beginAutomaticJoin(live.ssid))
+        DispatchQueue.concurrentPerform(iterations: 200) { _ in
+            session.remember(live, auth: live.auth)
+            precondition(session.credentials(for: live)!.password == "fixture-secret-password")
+        }
 
         // Rapid open/close must leave no orphan timer or worker run loop.
         let menuTimer = MainRunLoopTimer()

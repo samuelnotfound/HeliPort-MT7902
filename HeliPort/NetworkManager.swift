@@ -18,19 +18,20 @@ import AppKit
 import SystemConfiguration
 
 final class NetworkManager {
+    static let joinSession = JoinSession()
     private static let connectionRequest = WorkGate()
     private static let autoJoinRequest = WorkGate()
     private static let autoJoinTimer = MainRunLoopTimer()
     private static var authWindow: WiFiConfigWindow?
     private static var scanCallbacks = [(Set<NetworkInfo>) -> Void]() // Main-thread only.
     static let supportedSecurityMode = [
-        ITL80211_SECURITY_WPA2_PERSONAL
+        ITL80211_SECURITY_NONE, ITL80211_SECURITY_WPA2_PERSONAL
     ]
 
-    static func connect(networkInfo: NetworkInfo, saveNetwork: Bool = false,
+    static func connect(networkInfo: NetworkInfo, saveNetwork: Bool = false, interactive: Bool = true,
                         _ callback: ((_ result: Bool) -> Void)? = nil) {
         guard Thread.isMainThread else {
-            DispatchQueue.main.async { connect(networkInfo: networkInfo, saveNetwork: saveNetwork, callback) }
+            DispatchQueue.main.async { connect(networkInfo: networkInfo, saveNetwork: saveNetwork, interactive: interactive, callback) }
             return
         }
         guard let token = connectionRequest.begin() else {
@@ -44,13 +45,13 @@ final class NetworkManager {
             DispatchQueue.main.async {
                 guard connectionRequest.finish(token) else { return }
                 authWindow = nil
-                if let error { Alert(text: error).show() }
+                if interactive, let error { Alert(text: error).show() }
                 callback?(result)
             }
         }
 
         guard networkInfo.canJoin != false else {
-            finish(false, "This network is not joinable by the current MT7902 driver (WPA2-PSK/CCMP, optional PMF, supported channels only).")
+            finish(false, "This network is not joinable by the current MT7902 driver (open or WPA2-PSK/CCMP, optional PMF, supported channels only; open Wi-Fi requires driver 0.2.16 or newer).")
             return
         }
 
@@ -70,11 +71,15 @@ final class NetworkManager {
                 guard connectionRequest.isCurrent(token), !submitted else { return }
                 submitted = true
                 request.auth = auth
+                joinSession.remember(request, auth: auth)
                 let password = auth.password
                 StatusBarIcon.shared().connecting()
                 DispatchQueue.global(qos: .background).async {
                     let result = connect_network(request.ssid, password)
-                    if result && savePassword { CredentialsManager.instance.save(request) }
+                    if result {
+                        joinSession.succeeded(request.ssid)
+                        if savePassword { CredentialsManager.instance.save(request) }
+                    }
                     var detail: String?
                     if !result {
                         var error = [CChar](repeating: 0, count: 256)
@@ -91,17 +96,29 @@ final class NetworkManager {
 
         // Getting keychain access blocks UI Thread and makes everything freeze unless made async
         DispatchQueue.global().async {
-            if let savedNetworkAuth = CredentialsManager.instance.get(request) {
-                CredentialsManager.instance.setAutoJoin(request.ssid, true)
-                getAuthInfoCallback(savedNetworkAuth, false)
-                return
-            }
-
-            guard request.auth.security != ITL80211_SECURITY_NONE,
-                  request.auth.password.isEmpty else {
+            // An open observation must never retrieve a password saved for an
+            // older protected hotspot with the same SSID.
+            if request.auth.security == ITL80211_SECURITY_NONE {
+                request.auth.password = ""
                 getAuthInfoCallback(request.auth, saveNetwork)
                 return
             }
+            if !request.auth.password.isEmpty {
+                getAuthInfoCallback(request.auth, saveNetwork)
+                return
+            }
+            if let cached = joinSession.credentials(for: request) {
+                getAuthInfoCallback(cached, saveNetwork)
+                return
+            }
+            if let saved = CredentialsManager.instance.get(request, interactive: interactive),
+               saved.security == request.auth.security {
+                getAuthInfoCallback(saved, false)
+                return
+            }
+            // Background auto-join may fail silently; it never opens either a
+            // Keychain authorization dialog or the app's Wi-Fi password window.
+            guard interactive else { finish(false, nil); return }
 
             DispatchQueue.main.async {
                 guard connectionRequest.isCurrent(token) else { return }
@@ -213,7 +230,11 @@ final class NetworkManager {
 
     private static func connectSavedNetworks(networks: [NetworkInfo]) {
         guard !connectionRequest.isBusy, let first = networks.first else { return }
-        connect(networkInfo: first) { connected in
+        guard joinSession.beginAutomaticJoin(first.ssid) else {
+            connectSavedNetworks(networks: Array(networks.dropFirst()))
+            return
+        }
+        connect(networkInfo: first, interactive: false) { connected in
             if !connected { connectSavedNetworks(networks: Array(networks.dropFirst())) }
         }
     }

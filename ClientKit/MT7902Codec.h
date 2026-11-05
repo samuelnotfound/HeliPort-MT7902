@@ -10,7 +10,7 @@ static inline bool mt7902_encode_join(struct mt7902_join *out, const char *ssid,
     memset(out, 0, sizeof(*out));
     if (!ssid || !password) return false;
     size_t sn = strnlen(ssid, 33), pn = strnlen(password, 64);
-    if (!sn || sn > 32 || pn < 8 || pn > 63) return false;
+    if (!sn || sn > 32 || (pn && pn < 8) || pn > 63) return false;
     out->version = 1; memcpy(out->ssid, ssid, sn); memcpy(out->passphrase, password, pn);
     return true;
 }

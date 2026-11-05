@@ -15,6 +15,7 @@
 
 import Foundation
 import KeychainAccess
+import Security
 
 final class CredentialsManager {
     static let instance: CredentialsManager = CredentialsManager()
@@ -44,8 +45,8 @@ final class CredentialsManager {
         try? keychain.comment(entityJson).set(networkAuthJson, key: network.keychainKey)
     }
 
-    func get(_ network: NetworkInfo) -> NetworkAuth? {
-        guard let password = keychain[string: network.keychainKey],
+    func get(_ network: NetworkInfo, interactive: Bool = true) -> NetworkAuth? {
+        guard let password = try? keychain.authenticationUI(interactive ? .allow : .fail).getString(network.keychainKey),
             let jsonData = password.data(using: .utf8) else {
             Log.debug("No stored password for network \(network.ssid)")
             return nil
@@ -57,27 +58,26 @@ final class CredentialsManager {
 
     func remove(_ network: NetworkInfo) {
         Log.debug("Removing \(network.ssid) from keychain")
+        NetworkManager.joinSession.forget(network.ssid)
+        ssidCache.removeObject(forKey: ssidCacheKey)
         try? keychain.remove(network.keychainKey)
     }
 
     func getStorageFromSsid(_ ssid: String) -> NetworkInfoStorageEntity? {
-        guard let attributes = try? keychain.get(ssid, handler: {$0}),
-            let json = attributes.comment,
-            let jsonData = json.data(using: .utf8) else {
-                return nil
-        }
+        // KeychainAccess.get(handler:) also requests kSecReturnData. Menu
+        // refreshes only need the public comment, never password authorization.
+        let query = SavedNetworkMetadata.query(service: Bundle.main.bundleIdentifier!, ssid: ssid)
+        var result: CFTypeRef?
+        guard SecItemCopyMatching(query as CFDictionary, &result) == errSecSuccess,
+              let attributes = result as? [String: Any],
+              let json = attributes[kSecAttrComment as String] as? String,
+              let jsonData = json.data(using: .utf8) else { return nil }
 
         return try? JSONDecoder().decode(NetworkInfoStorageEntity.self, from: jsonData)
     }
 
     func getAuthFromSsid(_ ssid: String) -> NetworkAuth? {
-        guard let attributes = try? keychain.get(ssid, handler: {$0}),
-            let jsonData = attributes.data
-            else {
-                return nil
-        }
-
-        return try? JSONDecoder().decode(NetworkAuth.self, from: jsonData)
+        return get(NetworkInfo(ssid: ssid), interactive: false)
     }
 
     func setAutoJoin(_ ssid: String, _ autoJoin: Bool) {
@@ -119,14 +119,9 @@ final class CredentialsManager {
             entity.autoJoin && entity.version == NetworkInfoStorageEntity.CURRENT_VERSION
         }.sorted {
             $0.order < $1.order
-        }.compactMap { entity in
-            // Older comments were saved with default security NONE. The actual
-            // Keychain value still has the mode; repair the in-memory metadata.
-            guard let auth = getAuthFromSsid(entity.network.ssid) else { return nil }
-            let network = entity.network.storageSnapshot()
-            network.auth.security = auth.security
-            return network
-        }
+        }.map { $0.network.storageSnapshot() }
+        // Auto-join matches these SSIDs to current scan entries. Legacy NONE
+        // comments do not require loading every protected password to repair.
     }
 
     func getSavedNetworkSSIDs() -> Set<String> {
