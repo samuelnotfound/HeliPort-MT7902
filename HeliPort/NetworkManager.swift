@@ -198,7 +198,9 @@ final class NetworkManager {
                 autoJoinTimer.start(interval: 5, immediately: true) {
                     guard !connectionRequest.isBusy, is_power_on() else { return }
                     NetworkManager.scanNetwork { networkList in
-                        let targets = savedNetworks.filter { networkList.contains($0) }
+                        // Join the current driver observation, not a stripped/stale
+                        // Keychain comment whose security may default to NONE.
+                        let targets = NetworkInfo.currentJoinTargets(saved: savedNetworks, visible: networkList)
                         guard !targets.isEmpty else { return }
                         autoJoinTimer.stop()
                         autoJoinRequest.finish(token)

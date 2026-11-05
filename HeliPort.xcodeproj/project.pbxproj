@@ -693,7 +693,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.3;
+				MARKETING_VERSION = 2.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
 				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -715,7 +715,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 2.1.3;
+				MARKETING_VERSION = 2.1.4;
 				PRODUCT_BUNDLE_IDENTIFIER = org.samuelnotfound.HeliPortMT7902;
 				PRODUCT_NAME = "HeliPort-MT7902";
 				SWIFT_EMIT_LOC_STRINGS = YES;

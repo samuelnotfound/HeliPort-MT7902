@@ -26,6 +26,20 @@ final class NetworkInfo: Codable {
         self.ssid = ssid
         self.rssi = rssi
     }
+    static func currentJoinTargets(saved: [NetworkInfo], visible: Set<NetworkInfo>) -> [NetworkInfo] {
+        saved.compactMap { remembered in
+            visible.first { $0.ssid == remembered.ssid && $0.canJoin == true }
+        }
+    }
+
+    // Public metadata may be stored in a Keychain comment. Credentials stay in
+    // its protected value, and joinability must be refreshed from the driver.
+    func storageSnapshot() -> NetworkInfo {
+        let copy = NetworkInfo(ssid: ssid, rssi: rssi)
+        copy.auth.security = auth.security
+        return copy
+    }
+
 }
 
 extension NetworkInfo: Hashable {

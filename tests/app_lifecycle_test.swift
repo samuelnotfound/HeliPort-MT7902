@@ -12,6 +12,34 @@ struct AppLifecycleTests {
     }
 
     static func main() {
+        // A save must preserve security metadata without leaking credentials
+        // into the public Keychain comment or mutating the live UI request.
+        let live = NetworkInfo(ssid: "secured-fixture", rssi: -45)
+        live.canJoin = true
+        live.auth.security = ITL80211_SECURITY_WPA2_PERSONAL
+        live.auth.password = "fixture-secret-password"
+        live.auth.username = "fixture-secret-username"
+        live.auth.identity = [1, 2, 3]
+        let metadata = live.storageSnapshot()
+        precondition(metadata.auth.security == ITL80211_SECURITY_WPA2_PERSONAL)
+        precondition(metadata.canJoin == nil && metadata.auth.password.isEmpty)
+        precondition(metadata.auth.username.isEmpty && metadata.auth.identity.isEmpty)
+        precondition(live.auth.password == "fixture-secret-password")
+        let encoded = try! JSONEncoder().encode(NetworkInfoStorageEntity(metadata))
+        let text = String(decoding: encoded, as: UTF8.self)
+        precondition(!text.contains("fixture-secret-password") && !text.contains("fixture-secret-username"))
+        let decoded = try! JSONDecoder().decode(NetworkInfoStorageEntity.self, from: encoded)
+        precondition(decoded.network.auth.security == ITL80211_SECURITY_WPA2_PERSONAL)
+        // Previously saved comments have NONE. Auto-join must use the visible
+        // WPA2 observation, preserve saved priority, and skip unjoinable/missing APs.
+        let stale = NetworkInfo(ssid: "secured-fixture")
+        let missing = NetworkInfo(ssid: "missing-fixture")
+        let blocked = NetworkInfo(ssid: "open-fixture")
+        blocked.canJoin = false
+        let targets = NetworkInfo.currentJoinTargets(saved: [missing, stale, blocked], visible: [live, blocked])
+        precondition(targets.count == 1 && targets[0] === live)
+        precondition(stale.auth.security == ITL80211_SECURITY_NONE)
+
         // Rapid open/close must leave no orphan timer or worker run loop.
         let menuTimer = MainRunLoopTimer()
         var refreshes = 0

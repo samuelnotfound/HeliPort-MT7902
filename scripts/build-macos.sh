@@ -11,7 +11,9 @@ echo "macOS SDK: $sdk_version"
 xcrun --sdk macosx clang -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined tests/mt7902_codec_test.c \
     -framework CoreFoundation -framework IOKit -o build/mt7902_codec_test
 build/mt7902_codec_test
-xcrun swiftc -swift-version 5 -parse-as-library -sanitize=address -g \
+xcrun swiftc -swift-version 5 -parse-as-library -sanitize=address -g -import-objc-header ClientKit/Api.h \
+    'HeliPort/Supporting files/NetworkManager+Data.swift' \
+    'HeliPort/Supporting files/itl80211_security+Description.swift' \
     'HeliPort/Supporting files/ConnectionAnimation.swift' \
     'HeliPort/Supporting files/AppWork.swift' \
     'HeliPort/Supporting files/InterfaceDetails.swift' tests/app_lifecycle_test.swift \

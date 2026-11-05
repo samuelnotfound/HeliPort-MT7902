@@ -31,8 +31,9 @@ final class CredentialsManager {
         guard let networkAuthJson = try? String(decoding: JSONEncoder().encode(network.auth), as: UTF8.self) else {
             return
         }
-        network.auth = NetworkAuth()
-        let entity = NetworkInfoStorageEntity(network)
+        // The Keychain value owns credentials; its comment retains non-secret
+        // security metadata. Never clear auth on a request referenced by the UI.
+        let entity = NetworkInfoStorageEntity(network.storageSnapshot())
         guard let entityJson = try? String(decoding: JSONEncoder().encode(entity), as: UTF8.self) else {
             return
         }
@@ -118,8 +119,13 @@ final class CredentialsManager {
             entity.autoJoin && entity.version == NetworkInfoStorageEntity.CURRENT_VERSION
         }.sorted {
             $0.order < $1.order
-        }.map { entity in
-            entity.network
+        }.compactMap { entity in
+            // Older comments were saved with default security NONE. The actual
+            // Keychain value still has the mode; repair the in-memory metadata.
+            guard let auth = getAuthFromSsid(entity.network.ssid) else { return nil }
+            let network = entity.network.storageSnapshot()
+            network.auth.security = auth.security
+            return network
         }
     }
 
